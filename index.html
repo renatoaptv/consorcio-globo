@@ -20,28 +20,59 @@ function sync(){ $('stepName').textContent=steps[s.step-1];$('stepCount').textCo
 function lanceMarkup(p,g){
  const fixed=g.cat==='Imóveis'?[60,70]:[15];
  const full=CATALOG.find(x=>x.group===p.group&&x.code===p.code&&x.term===p.term&&x.pct===100);
- return `<section class="bid-panel"><h3>Simule seu lance</h3><p class="sub">Escolha a modalidade e veja os valores em um cenário hipotético de contemplação.</p><div class="fields"><div class="field"><label for="bidMode">Modalidade</label><select id="bidMode"><option value="free">Lance livre</option>${fixed.map(n=>`<option value="${n}">Lance fixo — ${n} cotas</option>`).join('')}</select></div><div class="field" id="bidFreeWrap"><label for="bidFree">Lance total desejado (R$)</label><input id="bidFree" type="number" inputmode="decimal" min="0" step="0.01" placeholder="Ex.: 10000"></div><div class="field wide" id="bidBaseWrap" hidden><label for="bidBase">Valor de uma cota de referência para lance (R$)</label><input id="bidBase" type="number" inputmode="decimal" min="0" step="0.01" placeholder="Informe o valor confirmado pela administradora"><small>O lance fixo é expresso em cotas. Informe o valor de referência correto, sem utilizar a parcela reduzida. A tabela comercial não identifica o valor oficial dessa base.</small></div>${g.embedded?`<div class="field wide"><label for="bidEmbedded">Parte do lance usando a carta de crédito (%)</label><input id="bidEmbedded" type="number" min="0" max="30" step="0.01" value="0" inputmode="decimal"><small>Até 30% do crédito, conforme tabela comercial. O embutido não pode exceder o lance total.</small></div>`:`<p class="note wide">A tabela do grupo 4210 não informa lance embutido; simulação apenas com recursos próprios.</p>`}<div class="field wide"><label for="bidBalance">Saldo devedor elegível para lance (R$, opcional)</label><input id="bidBalance" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Informe o saldo confirmado"><small>Sem esse saldo, o limite máximo e a amortização não podem ser validados.</small></div><div class="field wide"><label for="bidMonths">Parcelas restantes (opcional)</label><input id="bidMonths" type="number" min="1" max="${p.term}" step="1" inputmode="numeric" placeholder="Até ${p.term}"></div></div><div id="bidResult" aria-live="polite"></div><p class="note">Não oferta lance de verdade nem garante contemplação. O mínimo do lance livre depende da parcela de referência contratual e o máximo do saldo elegível. A apuração oficial, taxas, diferenças e reajustes devem ser confirmados com a administradora.</p>${p.pct===70&&full?`<div class="bid-reduced"><h3>Parcela reduzida de 70%</h3><p>Parcela de tabela: <b>${money(p.payment)}</b> · Parcela integral de tabela: <b>${money(full.payment)}</b>.</p><div class="field"><label for="reducedMonths">Quantidade de parcelas reduzidas pagas</label><input id="reducedMonths" type="number" min="0" max="${p.term}" step="1" inputmode="numeric" value="0"></div><p id="reducedResult" aria-live="polite"></p><small>Diferença nominal entre as duas opções de tabela, sem reajustes; não é apuração contratual. Pagamento e compensação das diferenças sujeitos ao contrato aplicável.</small></div>`:''}</section>`;
+ return `<section class="bid-panel"><h3>Simule seu lance</h3><p class="sub">Digite seu lance em reais ou em percentual da carta. O resultado aparece automaticamente ou ao tocar em Calcular.</p><div class="fields"><div class="field wide"><label for="bidMode">Modalidade</label><select id="bidMode"><option value="free">Lance livre — recursos próprios em R$</option><option value="percent">Lance livre — recursos próprios em % da carta</option>${fixed.map(n=>`<option value="${n}">Lance fixo — ${n} cotas</option>`).join('')}</select></div><div class="field wide" id="bidFreeWrap"><label id="bidFreeLabel" for="bidFree">Recursos próprios (R$)</label><input id="bidFree" type="text" inputmode="decimal" value="0" placeholder="Ex.: 10.000,00"></div><div class="field wide" id="bidBaseWrap" hidden><label for="bidBase">Valor de referência de uma cota de lance (R$)</label><input id="bidBase" type="text" inputmode="decimal" placeholder="Informe o valor confirmado pela administradora"><small>O valor oficial da cota de lance não está identificado na tabela. Não utilize a parcela reduzida como referência.</small></div>${g.embedded?`<div class="field wide"><label for="bidEmbedded">Lance embutido (% da carta)</label><input id="bidEmbedded" type="text" inputmode="decimal" value="0" placeholder="0 a 30"><small>Até 30% conforme tabela comercial. No lance livre, soma-se aos recursos próprios; no fixo, compõe o valor total exigido.</small></div>`:`<p class="note wide">A tabela do grupo 4210 não informa lance embutido.</p>`}<div class="field wide"><label for="bidBalance">Saldo devedor elegível para lance (R$, opcional)</label><input id="bidBalance" type="text" inputmode="decimal" placeholder="Informe o saldo confirmado"><small>Necessário para validar o máximo e estimar a amortização.</small></div><div class="field wide"><label for="bidMonths">Parcelas restantes (opcional)</label><input id="bidMonths" type="text" inputmode="numeric" placeholder="Até ${p.term}"></div></div><button type="button" id="bidCalculate" class="btn primary" style="width:100%;margin-top:12px">Calcular lance</button><div id="bidResult" aria-live="polite"></div><p class="note">Simulação hipotética, sem garantia de contemplação. O mínimo do lance livre e a base do fixo dependem das regras e valores oficiais do grupo. Os cálculos não substituem a apuração da administradora.</p>${p.pct===70&&full?`<div class="bid-reduced"><h3>Parcela reduzida de 70%</h3><p>Parcela de tabela: <b>${money(p.payment)}</b> · Parcela integral de tabela: <b>${money(full.payment)}</b>.</p><div class="field"><label for="reducedMonths">Quantidade de parcelas reduzidas pagas</label><input id="reducedMonths" type="text" inputmode="numeric" value="0"></div><p id="reducedResult" aria-live="polite"></p><small>Diferença nominal entre as opções de tabela, sem reajustes; não é apuração contratual.</small></div>`:''}</section>`;
+}
+function bidNumber(raw){
+ const v=String(raw??'').trim().replace(/^R\$\s*/i,'').replace(/\s/g,'');
+ if(!v)return null;
+ if(!/^-?\d+(?:[.,]\d+)*$/.test(v))return NaN;
+ if(v.includes(',')){if(!/^-?(?:\d+|\d{1,3}(?:\.\d{3})+),\d{1,2}$/.test(v))return NaN;return Number(v.replace(/\./g,'').replace(',','.'));}
+ if(/^-?\d{1,3}(?:\.\d{3})+$/.test(v))return Number(v.replace(/\./g,''));
+ if(!/^-?\d+(?:\.\d{1,2})?$/.test(v))return NaN;
+ return Number(v);
+}
+function bidCompute(p,g,v){
+ const {mode,amount,base,pct,bal,months}=v;
+ const fail=error=>({error});
+ const cents=n=>Math.round(n*100)/100;
+ if(!Number.isFinite(pct)||pct<0||pct>(g.embedded?30:0))return fail('Informe um percentual de lance embutido válido.');
+ const embedded=cents(p.credit*pct/100);
+ let own,total;
+ if(mode==='free'||mode==='percent'){
+  if(!Number.isFinite(amount)||amount<0||(mode==='percent'&&amount>100))return fail('Informe um valor válido de recursos próprios.');
+  own=cents(mode==='percent'?p.credit*amount/100:amount);
+  total=cents(own+embedded);
+ }else{
+  if(!Number.isFinite(base)||base<=0)return fail('Informe o valor oficial da cota de referência para calcular o lance fixo.');
+  total=cents(base*Number(mode));
+  own=cents(total-embedded);
+  if(own<0)return fail('O valor embutido não pode superar o lance fixo total.');
+ }
+ if(!Number.isFinite(total)||total<=0)return fail('Informe o valor de recursos próprios ou o percentual embutido para calcular.');
+ if(bal!==null&&(!Number.isFinite(bal)||bal<=0||total>bal))return fail('O lance total não pode ultrapassar o saldo devedor elegível informado.');
+ if(months!==null&&(!Number.isInteger(months)||months<1||months>p.term))return fail('Informe uma quantidade inteira de parcelas restantes, dentro do prazo selecionado.');
+ const result={total,own,embedded,net:cents(p.credit-embedded),percent:total/p.credit*100};
+ if(bal!==null){result.remaining=cents(bal-total);if(months!==null){result.monthly=cents(result.remaining/months);result.equivalent=Math.min(months,Math.floor(total/(bal/months)+1e-9));}}
+ return result;
 }
 function mountLance(p,g){
- const number=id=>{const el=$(id);return el&&el.value.trim()!==''?Number(el.value):null;};
+ const read=id=>bidNumber($(id)?.value);
  function update(){
- const free=$('bidMode').value==='free';
- $('bidFreeWrap').hidden=!free;$('bidBaseWrap').hidden=free;
- const base=number('bidBase'),ownTotal=free?number('bidFree'):(base===null?null:base*Number($('bidMode').value));
- const pct=g.embedded?number('bidEmbedded'):0,bal=number('bidBalance'),months=number('bidMonths');
- const setMessage=msg=>{$('bidResult').textContent=msg;};
- if(ownTotal===null||!Number.isFinite(ownTotal)||ownTotal<=0){setMessage(free?'Informe o valor total desejado para simular.':'Informe o valor oficial de uma cota de referência para calcular o lance fixo.');return;}
- if(pct===null||!Number.isFinite(pct)||pct<0||pct>30){setMessage('Informe um percentual de lance embutido entre 0 e 30%.');return;}
- const total=Math.round(ownTotal*100)/100,embedded=Math.round(p.credit*pct)/100;
- if(embedded>total){setMessage('O valor embutido não pode superar o lance total.');return;}
- if(bal!==null&&(!Number.isFinite(bal)||bal<=0||total>bal)){setMessage('O lance total não pode ultrapassar o saldo devedor elegível informado.');return;}
- if(months!==null&&(!Number.isInteger(months)||months<1||months>p.term)){setMessage('Informe uma quantidade inteira de parcelas restantes, dentro do prazo comercial selecionado.');return;}
- const parts=[['Lance total',money(total)],['Lance como % da carta',(total/p.credit*100).toLocaleString('pt-BR',{maximumFractionDigits:2})+'%'],['Recursos próprios',money(total-embedded)],['Lance embutido',money(embedded)],['Carta líquida após lance embutido',money(p.credit-embedded)]];
- if(bal!==null){const remaining=Math.max(0,bal-total);parts.push(['Saldo após amortização (estimativa)',money(remaining)]);if(months!==null){parts.push(['Saldo dividido pelas parcelas restantes (estimativa)',money(remaining/months)]);parts.push(['Redução equivalente de parcelas ao valor médio atual (estimativa)',Math.min(months,Math.floor(total/(bal/months)+1e-9))+' parcelas']);}}
- $('bidResult').innerHTML='<div class="details">'+parts.map(([label,val])=>`<div><span>${esc(label)}</span><b>${esc(val)}</b></div>`).join('')+'</div><p class="note">'+(bal===null?'Saldo não informado: limite máximo não verificado. ':'')+(free?'Lance mínimo não confirmado. ':'')+'Crédito líquido não inclui outras deduções. As projeções de amortização são aritméticas e não representam boleto ou prazo oficial.</p>';
+  const mode=$('bidMode').value,isFree=mode==='free'||mode==='percent';
+  $('bidFreeWrap').hidden=!isFree;$('bidBaseWrap').hidden=isFree;
+  $('bidFreeLabel').textContent=mode==='percent'?'Recursos próprios (% da carta)':'Recursos próprios (R$)';
+  const pct=g.embedded?(read('bidEmbedded')??0):0,bal=read('bidBalance'),months=read('bidMonths');
+  const x=bidCompute(p,g,{mode,amount:read('bidFree')??0,base:read('bidBase'),pct,bal,months});
+  if(x.error){$('bidResult').textContent=x.error;return;}
+  const parts=[['Lance total',money(x.total)],['Lance como % da carta',x.percent.toLocaleString('pt-BR',{maximumFractionDigits:2})+'%'],['Recursos próprios',money(x.own)],['Lance embutido',money(x.embedded)],['Carta líquida após lance embutido',money(x.net)]];
+  if(x.remaining!==undefined)parts.push(['Saldo após amortização (estimativa)',money(x.remaining)]);
+  if(x.monthly!==undefined)parts.push(['Saldo dividido pelas parcelas restantes (estimativa)',money(x.monthly)],['Redução equivalente de parcelas ao valor médio atual (estimativa)',x.equivalent+' parcelas']);
+  $('bidResult').innerHTML='<div class="details">'+parts.map(([label,val])=>`<div><span>${esc(label)}</span><b>${esc(val)}</b></div>`).join('')+'</div><p class="note">'+(bal===null?'Saldo não informado: limite máximo não verificado. ':'')+(isFree?'Lance mínimo não confirmado. ':'')+'Crédito líquido não inclui outras deduções. As projeções de amortização não representam boleto ou prazo oficial.</p>';
  }
- ['bidMode','bidFree','bidBase','bidEmbedded','bidBalance','bidMonths'].forEach(id=>{const el=$(id);if(el){el.addEventListener('input',update);el.addEventListener('change',update)}});
- if($('reducedMonths')){const full=CATALOG.find(x=>x.group===p.group&&x.code===p.code&&x.term===p.term&&x.pct===100);const redraw=()=>{const n=number('reducedMonths');$('reducedResult').textContent=n!==null&&Number.isInteger(n)&&n>=0&&n<=p.term?'Diferença nominal acumulada: '+money((full.payment-p.payment)*n):'Informe uma quantidade válida de parcelas.';};$('reducedMonths').addEventListener('input',redraw);redraw();}
+ $('bidMode').addEventListener('change',()=>{$('bidFree').value='0';update();});
+ ['bidFree','bidBase','bidEmbedded','bidBalance','bidMonths'].forEach(id=>{const el=$(id);if(el){el.addEventListener('input',update);el.addEventListener('change',update)}});
+ $('bidCalculate').addEventListener('click',update);
+ if($('reducedMonths')){const full=CATALOG.find(x=>x.group===p.group&&x.code===p.code&&x.term===p.term&&x.pct===100);const redraw=()=>{const n=read('reducedMonths');$('reducedResult').textContent=n!==null&&Number.isInteger(n)&&n>=0&&n<=p.term?'Diferença nominal acumulada: '+money((full.payment-p.payment)*n):'Informe uma quantidade válida de parcelas.';};$('reducedMonths').addEventListener('input',redraw);redraw();}
  update();
 }
 function render(){sync();if(s.step===1){shell(`<h2>Queremos te conhecer!</h2><p class="sub">Informe seus dados para iniciar sua simulação personalizada.</p><form id="form"><div class="fields"><div class="field wide"><label for="name">Como prefere ser chamado(a)?</label><input id="name" name="name" autocomplete="given-name" required maxlength="80" placeholder="Seu nome" value="${esc(s.name)}"></div><div class="field"><label for="email">Seu melhor e-mail</label><input id="email" name="email" type="email" autocomplete="email" required placeholder="voce@email.com" value="${esc(s.email)}"></div><div class="field"><label for="phone">Seu WhatsApp</label><input id="phone" name="phone" type="tel" autocomplete="tel" required maxlength="20" placeholder="(47) 99999-9999" value="${esc(s.phone)}"></div></div><label class="check"><input type="checkbox" id="consent" name="consent" required ${s.consent?'checked':''}><span>Li o <button type="button" class="link" onclick="document.getElementById('privacy').showModal()">aviso de privacidade</button> e concordo em usar meus dados para solicitar atendimento e simulação.</span></label><div id="err" class="error" role="alert" aria-live="polite"></div>${actions('Iniciar simulação',false)}</form>`,f=>{var name=String(f.get('name')||'').trim(), email=String(f.get('email')||'').trim(), raw=String(f.get('phone')||'').trim(), phone=raw.replace(/\D/g,'');
