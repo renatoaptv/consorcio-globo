@@ -51,8 +51,8 @@ html.desktop-ui #lanceDialog .ls-grid{gap:8px;margin:8px 0}
 html.desktop-ui #lanceDialog .ls-row{padding:5px 0}
 
 
-    html.desktop-ui #lanceDialog{width:min(1160px,96vw);max-height:92dvh;overflow:hidden;padding:16px}
-    html.desktop-ui #lanceDialog .ls-main{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:8px 16px;align-items:start;transform-origin:top center}
+    html.desktop-ui #lanceDialog{width:min(1160px,96vw);max-height:92dvh;overflow:auto;overscroll-behavior:contain;padding:16px}
+    html.desktop-ui #lanceDialog .ls-main{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:8px 16px;align-items:start;transform:none}
     html.desktop-ui #lanceDialog .ls-head{grid-column:1/-1}
     html.desktop-ui #lanceDialog .ls-hero{grid-column:1;grid-row:2;margin:0}
     html.desktop-ui #lanceDialog .ls-controls{grid-column:1;grid-row:3;margin:0}
@@ -113,9 +113,7 @@ html.desktop-ui #lanceDialog .ls-row{padding:5px 0}
     function scenarioText(){if(!current)return '';const x=current;const modality=el('lsMode').selectedOptions[0].textContent;return ['Simulação comercial estimada — Grupo '+g.group+' / '+p.code,'Crédito: '+brl(p.credit),'Parcela de tabela: '+brl(p.payment)+' / '+p.term+' meses','Modalidade: '+modality,'Lance: '+brl(x.bid),'Recursos próprios: '+brl(x.own),'Embutido: '+brl(x.embedded),'FGTS: '+brl(x.fgts),'Crédito líquido: '+brl(x.credit),'Saldo estimado: '+brl(x.net),'Redução da parcela: '+brl(x.lower),'Redução do prazo: '+(x.shorter>x.months?'não aplicável neste prazo':x.shorter+' meses'),'Sujeito à confirmação da administradora; sem garantia de contemplação.'].join('\n');}
     el('lsUse').onclick=()=>{if(!current)return;window.lanceScenario={key:[p.group,p.code,p.term,p.pct].join('|'),summary:scenarioText()};dialog.close();if(typeof window.refreshLanceChoice==='function')window.refreshLanceChoice();};
     el('lsCopy').onclick=async()=>{const msg=scenarioText();if(!msg)return;try{await navigator.clipboard.writeText(msg);el('lsStatus').textContent='Cenário copiado.'}catch(e){el('lsStatus').textContent='Não foi possível copiar automaticamente.'}};
-    const desktop=document.documentElement.classList.contains('desktop-ui');let fitObserver=null,fitFrame=0;
-    function fitDialog(){if(!desktop||!dialog.open)return;cancelAnimationFrame(fitFrame);fitFrame=requestAnimationFrame(()=>{const cs=getComputedStyle(dialog),pad=parseFloat(cs.paddingTop)+parseFloat(cs.paddingBottom);const max=(window.visualViewport?.height||window.innerHeight)*.92;const needed=panel.offsetHeight;const available=Math.max(1,max-pad);const scale=Math.min(1,available/Math.max(1,needed));panel.style.transform=scale<1?'scale('+scale.toFixed(5)+')':'none';dialog.style.height=Math.min(max,needed*scale+pad)+'px';dialog.scrollTop=0;});}
-    dialog.addEventListener('close',()=>{if(fitObserver)fitObserver.disconnect();cancelAnimationFrame(fitFrame);window.removeEventListener('resize',fitDialog);dialog.remove();});
-    update();dialog.showModal();if(desktop){if(typeof ResizeObserver==='function'){fitObserver=new ResizeObserver(fitDialog);fitObserver.observe(panel);}window.addEventListener('resize',fitDialog);fitDialog();}
+    dialog.addEventListener('close',()=>dialog.remove());
+    update();dialog.showModal();
   };
 })();
