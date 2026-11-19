@@ -69,6 +69,32 @@ html.desktop-ui #lanceDialog .ls-row{padding:5px 0}
     html.desktop-ui #lanceDialog input:not([type=range]),html.desktop-ui #lanceDialog select{min-height:36px;padding:6px 9px;font-size:14px}
     @media(max-width:680px){html.desktop-ui #lanceDialog .ls-main{display:block}html.desktop-ui #lanceDialog .ls-hero{margin:6px 0}}
     @media(max-width:460px){#lanceDialog{padding:13px}#lanceDialog .ls-grid{gap:8px}#lanceDialog .ls-result strong{font-size:18px}}
+
+    /* Mobile: leitura nítida, campos de toque e ações sem zoom automático. */
+    html:not(.desktop-ui) #lanceDialog{width:min(calc(100% - 12px),520px);max-height:calc(var(--app-height,100dvh) - 16px);padding:14px;border-radius:12px;overflow:auto;overscroll-behavior:contain}
+    html:not(.desktop-ui) #lanceDialog .ls-main{min-width:0}
+    html:not(.desktop-ui) #lanceDialog .ls-head{gap:8px}
+    html:not(.desktop-ui) #lanceDialog .ls-head h2{font-size:20px;line-height:1.2}
+    html:not(.desktop-ui) #lanceDialog .ls-close{display:grid;place-items:center;min-width:44px;min-height:44px;font-size:25px;padding:0;flex:none}
+    html:not(.desktop-ui) #lanceDialog .ls-hero{padding:12px;margin:9px 0;border-radius:9px;line-height:1.4}
+    html:not(.desktop-ui) #lanceDialog .ls-hero b{font-size:27px;letter-spacing:0}
+    html:not(.desktop-ui) #lanceDialog .ls-grid{gap:8px;margin:10px 0}
+    html:not(.desktop-ui) #lanceDialog .ls-grid>*{min-width:0}
+    html:not(.desktop-ui) #lanceDialog label{line-height:1.3;font-size:13px}
+    html:not(.desktop-ui) #lanceDialog select,html:not(.desktop-ui) #lanceDialog input:not([type=range]){font-size:16px;min-height:44px;padding:8px;border-radius:8px}
+    html:not(.desktop-ui) #lanceDialog input[type=range]{height:32px;margin:2px 0 0}
+    html:not(.desktop-ui) #lanceDialog .ls-result{padding:9px;border-radius:8px}
+    html:not(.desktop-ui) #lanceDialog .ls-result strong{font-size:clamp(16px,4.8vw,22px);line-height:1.25;font-variant-numeric:tabular-nums}
+    html:not(.desktop-ui) #lanceDialog .ls-label{font-size:12px;line-height:1.3}
+    html:not(.desktop-ui) #lanceDialog .ls-row{gap:9px;font-size:13px;padding:7px 0;line-height:1.35}
+    html:not(.desktop-ui) #lanceDialog .ls-row span{min-width:0}
+    html:not(.desktop-ui) #lanceDialog .ls-row b{flex:none;max-width:52%;overflow-wrap:anywhere}
+    html:not(.desktop-ui) #lanceDialog .ls-buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+    html:not(.desktop-ui) #lanceDialog .ls-buttons button{min-height:44px;font-size:14px;padding:9px 10px}
+    html:not(.desktop-ui) #lanceDialog #lsUse{grid-column:1/-1;background:#1255a4}
+    html:not(.desktop-ui) #lanceDialog #lsCopy,html:not(.desktop-ui) #lanceDialog #lsReset{background:#edf4fd;color:#1255a4;border:1px solid #c8d9ee}
+    @media(max-width:360px){html:not(.desktop-ui) #lanceDialog{padding:10px}html:not(.desktop-ui) #lanceDialog .ls-result{padding:7px}}
+
     `;
     dialog.append(style);
     const panel=document.createElement('div');panel.className='ls-main';
