@@ -19,6 +19,8 @@
     const net=Math.max(0,balance-bid), shorter=Math.ceil(Math.max(0,net/monthly-1e-9));
     return {base,monthly,insurance,reference,paid,balance,months,bid,embedded,fgts,own:Math.max(0,bid-embedded-fgts),credit:p.credit-embedded,net,lower:months&&net>0?net/months+insurance:0,shorter,regular:net>0?monthly+insurance:0,last:shorter?net-monthly*(shorter-1)+insurance:0};
   }
+  window.lanceScenario=null;
+  window.getLanceScenario=function(p){const a=window.lanceScenario;return a&&p&&a.key===[p.group,p.code,p.term,p.pct].join('|')?a.summary:''};
   window.openLanceSimulator=function(p,g){
     if(!p||!g||!(g.group in rates))return;
     const old=el('lanceDialog');if(old)old.remove();
@@ -46,7 +48,7 @@
       '<div class="ls-full" id="lsRangeBox"><label for="lsRange">Ajuste rápido em % da carta</label><input id="lsRange" type="range" min="0" max="100" step="1" value="20"></div>'+
       '<div class="ls-full" id="lsSourceBox"><label for="lsSource">Origem dos recursos</label><select id="lsSource"><option value="own">Recursos próprios</option>'+(g.embedded?'<option value="embedded">Embutido</option><option value="mixed">Misto: próprio + embutido</option>':'')+(g.fgts?'<option value="fgts">FGTS + próprios</option>':'')+(g.fgts&&g.embedded?'<option value="all">Próprio + embutido + FGTS</option>':'')+'</select></div>'+
       '<div id="lsEmbBox"><label for="lsEmb">Embutido (R$ · até 30% do crédito)</label><input id="lsEmb" type="number" min="0" step="0.01" value="0"></div><div id="lsFgtsBox"><label for="lsFgts">FGTS (R$ · sujeito à elegibilidade)</label><input id="lsFgts" type="number" min="0" step="0.01" value="0"></div></div>'+
-      '<div id="lsError" class="ls-error" role="alert" hidden></div><div id="lsOutput" aria-live="polite"></div><p class="ls-note">Projeção hipotética de contemplação na primeira assembleia, com a primeira parcela paga. Valores sem reajustes. O lance fixo utiliza a parcela inicial integral do grupo como referência, sem seguro, independentemente do prazo contratado. Seguro estimado constante. Parcelas anteriores à adesão, diferenças contratuais e liberação do crédito dependem da apuração oficial. Não há garantia de contemplação. '+(g.group==='4210'?'Lance embutido não habilitado: a tabela de motos não informa limite. ':'')+(g.group==='0126'||g.group==='8221'?'Taxa total inferida da tabela, pendente de confirmação. ':'')+(g.group==='4210'||g.group==='0128'?'O adendo apresenta referência específica para o lance mínimo. ':'')+'</p><div class="ls-buttons"><button type="button" id="lsCopy">Copiar cenário</button><button type="button" id="lsReset">Reiniciar</button></div><p id="lsStatus" role="status" class="ls-note"></p>';
+      '<div id="lsError" class="ls-error" role="alert" hidden></div><div id="lsOutput" aria-live="polite"></div><p class="ls-note">Projeção hipotética de contemplação na primeira assembleia, com a primeira parcela paga. Valores sem reajustes. O lance fixo utiliza a parcela inicial integral do grupo como referência, sem seguro, independentemente do prazo contratado. Seguro estimado constante. Parcelas anteriores à adesão, diferenças contratuais e liberação do crédito dependem da apuração oficial. Não há garantia de contemplação. '+(g.group==='4210'?'Lance embutido não habilitado: a tabela de motos não informa limite. ':'')+(g.group==='0126'||g.group==='8221'?'Taxa total inferida da tabela, pendente de confirmação. ':'')+(g.group==='4210'||g.group==='0128'?'O adendo apresenta referência específica para o lance mínimo. ':'')+'</p><div class="ls-buttons"><button type="button" id="lsUse">Usar cenário na proposta</button><button type="button" id="lsCopy">Copiar cenário</button><button type="button" id="lsReset">Reiniciar</button></div><p id="lsStatus" role="status" class="ls-note"></p>';
     dialog.append(panel);document.body.append(dialog);
     let current=null;
     function update(){
@@ -61,7 +63,7 @@
       let fgts=draw?0:['fgts','all'].includes(source)?Number(el('lsFgts').value):0;
       if(source==='embedded'&&!draw&&embedded>p.credit*.3+.005)prelim={error:'O lance integralmente embutido excede 30% do crédito. Escolha lance misto para complementar.'};
       const x=prelim.error?prelim:estimate(p,g,mode,unit,amount,embedded,fgts);
-      current=x.error?null:x;el('lsError').hidden=!x.error;el('lsError').textContent=x.error||'';el('lsCopy').disabled=!!x.error;
+      current=x.error?null:x;el('lsError').hidden=!x.error;el('lsError').textContent=x.error||'';el('lsCopy').disabled=!!x.error;el('lsUse').disabled=!!x.error;
       if(x.error){el('lsOutput').innerHTML='';return;}
       const row=(a,b)=>'<div class="ls-row"><span>'+a+'</span><b>'+b+'</b></div>';
       const tile=(a,b)=>'<div class="ls-result"><span class="ls-label">'+a+'</span><strong>'+b+'</strong></div>';
@@ -75,7 +77,9 @@
     el('lsRange').addEventListener('input',()=>{el('lsUnit').value='percent';el('lsAmount').value=el('lsRange').value;update()});
     el('lsClose').onclick=()=>dialog.close();
     el('lsReset').onclick=()=>{el('lsMode').value=String(fixed[0]);el('lsUnit').value='money';el('lsAmount').value=String(Math.round(p.credit*.2));el('lsSource').value='own';el('lsEmb').value=0;el('lsFgts').value=0;el('lsRange').value=20;el('lsStatus').textContent='';update()};
-    el('lsCopy').onclick=async()=>{if(!current)return;const x=current;const msg=['Simulação comercial estimada — Grupo '+g.group+' / '+p.code,'Crédito: '+brl(p.credit),'Parcela de tabela: '+brl(p.payment)+' / '+p.term+' meses','Lance: '+brl(x.bid),'Recursos próprios: '+brl(x.own),'Embutido: '+brl(x.embedded),'FGTS: '+brl(x.fgts),'Crédito líquido: '+brl(x.credit),'Saldo estimado: '+brl(x.net),'Redução da parcela: '+brl(x.lower),'Redução do prazo: '+(x.shorter>x.months?'não aplicável neste prazo':x.shorter+' meses'),'Sujeito à confirmação da administradora; sem garantia de contemplação.'].join('\n');try{await navigator.clipboard.writeText(msg);el('lsStatus').textContent='Cenário copiado.'}catch(e){el('lsStatus').textContent='Não foi possível copiar automaticamente.'}};
+    function scenarioText(){if(!current)return '';const x=current;const modality=el('lsMode').selectedOptions[0].textContent;return ['Simulação comercial estimada — Grupo '+g.group+' / '+p.code,'Crédito: '+brl(p.credit),'Parcela de tabela: '+brl(p.payment)+' / '+p.term+' meses','Modalidade: '+modality,'Lance: '+brl(x.bid),'Recursos próprios: '+brl(x.own),'Embutido: '+brl(x.embedded),'FGTS: '+brl(x.fgts),'Crédito líquido: '+brl(x.credit),'Saldo estimado: '+brl(x.net),'Redução da parcela: '+brl(x.lower),'Redução do prazo: '+(x.shorter>x.months?'não aplicável neste prazo':x.shorter+' meses'),'Sujeito à confirmação da administradora; sem garantia de contemplação.'].join('\n');}
+    el('lsUse').onclick=()=>{if(!current)return;window.lanceScenario={key:[p.group,p.code,p.term,p.pct].join('|'),summary:scenarioText()};dialog.close();if(typeof window.refreshLanceChoice==='function')window.refreshLanceChoice();};
+    el('lsCopy').onclick=async()=>{const msg=scenarioText();if(!msg)return;try{await navigator.clipboard.writeText(msg);el('lsStatus').textContent='Cenário copiado.'}catch(e){el('lsStatus').textContent='Não foi possível copiar automaticamente.'}};
     dialog.addEventListener('close',()=>dialog.remove());
     update();dialog.showModal();
   };
