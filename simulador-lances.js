@@ -9,7 +9,7 @@
     const reference=base/g.duration;
     const paid=monthly*(p.pct===70?.7:1);
     const balance=base-paid, months=p.term-1;
-    const min=reference;
+    const min=base/(g.group==='0128'?280:g.duration);
     let bid=mode==='draw'?0:mode==='free'?(unit==='percent'?p.credit*amount/100:unit==='cot'?reference*amount:amount):reference*Number(mode);
     bid=Math.round(bid*100)/100;
     if(!Number.isFinite(bid)||bid<0||bid>balance+.01||(mode==='free'&&bid<min-.01))return {error:'Informe um lance entre '+brl(min)+' e '+brl(balance)+'.'};
@@ -66,7 +66,7 @@
       const tile=(a,b)=>'<div class="ls-result"><span class="ls-label">'+a+'</span><strong>'+b+'</strong></div>';
       el('lsOutput').innerHTML='<div class="ls-grid">'+tile('Lance total',brl(x.bid))+tile('Crédito líquido estimado',brl(x.credit))+tile('Recursos próprios',brl(x.own))+tile('Saldo remanescente estimado',brl(x.net))+'</div>'+
         row('Lance sobre a carta',pct(x.bid/p.credit*100))+row('Cota de referência estimada',brl(x.reference))+row('Cotas equivalentes', (x.bid/x.reference).toLocaleString('pt-BR',{maximumFractionDigits:2}))+row('Lance embutido',brl(x.embedded))+row('FGTS',brl(x.fgts))+row('Saldo antes do lance (sem seguro futuro)',brl(x.balance))+row('Primeira parcela oficial',brl(p.payment))+row('Desembolso inicial: parcela + recursos próprios',brl(p.payment+x.own))+
-        '<h3 style="margin-top:15px">Compare as duas estratégias</h3><div class="ls-grid">'+tile('Manter prazo / reduzir parcela', (x.net>0?x.months:0)+' × '+brl(x.lower))+tile('Reduzir prazo / manter parcela integral',x.shorter+' meses')+'</div>'+row('Parcela integral estimada na redução de prazo',brl(x.regular))+row('Última parcela estimada',brl(Math.max(0,x.last)))+'<p class="ls-note">Saldo sem seguro futuro. Na modalidade reduzida, a diferença não amortizada permanece no saldo. Se o prazo calculado ultrapassar o prazo contratado, a administradora deverá ajustar as parcelas; não há extensão automática.</p>';
+        '<h3 style="margin-top:15px">Compare as duas estratégias</h3><div class="ls-grid">'+tile('Manter prazo / reduzir parcela', (x.net>0?x.months:0)+' × '+brl(x.lower))+tile('Reduzir prazo / manter parcela integral',(x.shorter>x.months?'Não aplicável neste prazo':x.shorter+' meses'))+'</div>'+(x.shorter>x.months?'':row('Parcela integral estimada na redução de prazo',brl(x.regular))+row('Última parcela estimada',brl(Math.max(0,x.last))))+'<p class="ls-note">Saldo sem seguro futuro. Na modalidade reduzida, a diferença não amortizada permanece no saldo. Se o prazo calculado ultrapassar o prazo contratado, a administradora deverá ajustar as parcelas; não há extensão automática.</p>';
     }
     el('lsMode').value=String(fixed[0]);
     el('lsAmount').value=String(Math.round(p.credit*.2));
@@ -74,7 +74,7 @@
     el('lsRange').addEventListener('input',()=>{el('lsUnit').value='percent';el('lsAmount').value=el('lsRange').value;update()});
     el('lsClose').onclick=()=>dialog.close();
     el('lsReset').onclick=()=>{el('lsMode').value=String(fixed[0]);el('lsUnit').value='money';el('lsAmount').value=String(Math.round(p.credit*.2));el('lsSource').value='own';el('lsEmb').value=0;el('lsFgts').value=0;el('lsRange').value=20;el('lsStatus').textContent='';update()};
-    el('lsCopy').onclick=async()=>{if(!current)return;const x=current;const msg=['Simulação comercial estimada — Grupo '+g.group+' / '+p.code,'Crédito: '+brl(p.credit),'Parcela de tabela: '+brl(p.payment)+' / '+p.term+' meses','Lance: '+brl(x.bid),'Recursos próprios: '+brl(x.own),'Embutido: '+brl(x.embedded),'FGTS: '+brl(x.fgts),'Crédito líquido: '+brl(x.credit),'Saldo estimado: '+brl(x.net),'Redução da parcela: '+brl(x.lower),'Redução do prazo: '+x.shorter+' meses','Sujeito à confirmação da administradora; sem garantia de contemplação.'].join('\n');try{await navigator.clipboard.writeText(msg);el('lsStatus').textContent='Cenário copiado.'}catch(e){el('lsStatus').textContent='Não foi possível copiar automaticamente.'}};
+    el('lsCopy').onclick=async()=>{if(!current)return;const x=current;const msg=['Simulação comercial estimada — Grupo '+g.group+' / '+p.code,'Crédito: '+brl(p.credit),'Parcela de tabela: '+brl(p.payment)+' / '+p.term+' meses','Lance: '+brl(x.bid),'Recursos próprios: '+brl(x.own),'Embutido: '+brl(x.embedded),'FGTS: '+brl(x.fgts),'Crédito líquido: '+brl(x.credit),'Saldo estimado: '+brl(x.net),'Redução da parcela: '+brl(x.lower),'Redução do prazo: '+(x.shorter>x.months?'não aplicável neste prazo':x.shorter+' meses'),'Sujeito à confirmação da administradora; sem garantia de contemplação.'].join('\n');try{await navigator.clipboard.writeText(msg);el('lsStatus').textContent='Cenário copiado.'}catch(e){el('lsStatus').textContent='Não foi possível copiar automaticamente.'}};
     dialog.addEventListener('close',()=>dialog.remove());
     update();dialog.showModal();
   };
