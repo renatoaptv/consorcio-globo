@@ -38,26 +38,43 @@
     #lanceDialog .ls-note{font-size:12px;line-height:1.5;color:#536580}#lanceDialog .ls-error{background:#fff0ef;padding:10px;border-radius:8px;color:#9d271c}#lanceDialog [hidden]{display:none!important}
     #lanceDialog .ls-buttons{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}#lanceDialog .ls-buttons button{padding:10px 14px;border:0;border-radius:8px;font-weight:700;color:white;background:#1760ad;cursor:pointer}
     #lanceDialog .ls-desktop-quick{display:none}
-    @media (any-hover:hover) and (any-pointer:fine){
-      #lanceDialog{width:min(920px,96vw);scrollbar-width:none}
-      #lanceDialog::-webkit-scrollbar{display:none}
-      #lanceDialog #lsRange{display:none}
-      #lanceDialog .ls-mobile-range-label{display:none}
-      #lanceDialog .ls-desktop-quick{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
-      #lanceDialog .ls-desktop-quick button{background:#eaf2fd;color:#1255a4;border:1px solid #c8d9ee;border-radius:8px;min-height:34px;padding:5px 12px;font-weight:750;flex:1}
-      #lanceDialog .ls-desktop-quick button:hover{background:#d6e7fc}
-      #lanceDialog .ls-desktop-quick button[aria-pressed="true"]{background:#1255a4;color:white}
-      #lanceDialog .ls-hero{padding:12px;margin:8px 0}
-      #lanceDialog .ls-grid{gap:8px;margin:8px 0}
-      #lanceDialog .ls-row{padding:5px 0}
-    }
+html.desktop-ui #lanceDialog{width:min(920px,96vw);scrollbar-width:none}
+html.desktop-ui #lanceDialog::-webkit-scrollbar{display:none}
+html.desktop-ui #lanceDialog #lsRange{display:none}
+html.desktop-ui #lanceDialog .ls-mobile-range-label{display:none}
+html.desktop-ui #lanceDialog .ls-desktop-quick{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+html.desktop-ui #lanceDialog .ls-desktop-quick button{background:#eaf2fd;color:#1255a4;border:1px solid #c8d9ee;border-radius:8px;min-height:34px;padding:5px 12px;font-weight:750;flex:1}
+html.desktop-ui #lanceDialog .ls-desktop-quick button:hover{background:#d6e7fc}
+html.desktop-ui #lanceDialog .ls-desktop-quick button[aria-pressed="true"]{background:#1255a4;color:white}
+html.desktop-ui #lanceDialog .ls-hero{padding:12px;margin:8px 0}
+html.desktop-ui #lanceDialog .ls-grid{gap:8px;margin:8px 0}
+html.desktop-ui #lanceDialog .ls-row{padding:5px 0}
+
+
+    html.desktop-ui #lanceDialog{width:min(1160px,96vw);max-height:92dvh;overflow:hidden;padding:16px}
+    html.desktop-ui #lanceDialog .ls-main{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:8px 16px;align-items:start;transform-origin:top center}
+    html.desktop-ui #lanceDialog .ls-head{grid-column:1/-1}
+    html.desktop-ui #lanceDialog .ls-hero{grid-column:1;grid-row:2;margin:0}
+    html.desktop-ui #lanceDialog .ls-controls{grid-column:1;grid-row:3;margin:0}
+    html.desktop-ui #lanceDialog #lsError{grid-column:1;grid-row:4}
+    html.desktop-ui #lanceDialog #lsOutput{grid-column:2;grid-row:2/5;min-width:0}
+    html.desktop-ui #lanceDialog .ls-main>.ls-note,html.desktop-ui #lanceDialog .ls-buttons{grid-column:1/-1;margin:0}
+    html.desktop-ui #lanceDialog .ls-main>.ls-note{font-size:11px;line-height:1.3}
+    html.desktop-ui #lanceDialog #lsOutput .ls-grid{margin:0 0 6px}
+    html.desktop-ui #lanceDialog .ls-result{padding:8px}
+    html.desktop-ui #lanceDialog .ls-result strong{font-size:18px}
+    html.desktop-ui #lanceDialog .ls-row{font-size:12px;padding:4px 0}
+    html.desktop-ui #lanceDialog #lsOutput h3{font-size:15px;margin-top:8px!important}
+    html.desktop-ui #lanceDialog #lsOutput .ls-note{font-size:11px;line-height:1.3}
+    html.desktop-ui #lanceDialog input:not([type=range]),html.desktop-ui #lanceDialog select{min-height:36px;padding:6px 9px;font-size:14px}
+    @media(max-width:680px){html.desktop-ui #lanceDialog .ls-main{display:block}html.desktop-ui #lanceDialog .ls-hero{margin:6px 0}}
     @media(max-width:460px){#lanceDialog{padding:13px}#lanceDialog .ls-grid{gap:8px}#lanceDialog .ls-result strong{font-size:18px}}
     `;
     dialog.append(style);
-    const panel=document.createElement('div');
+    const panel=document.createElement('div');panel.className='ls-main';
     panel.innerHTML='<div class="ls-head"><div><h2 id="lanceTitle">Simule seu lance</h2><p class="ls-note">Experimente livremente antes de contratar.</p></div><button class="ls-close" id="lsClose" type="button" aria-label="Fechar">×</button></div>'+
       '<div class="ls-hero">Grupo '+g.group+' · '+p.code+'<b>'+brl(p.credit)+'</b>'+p.term+' meses · '+brl(p.payment)+' de parcela oficial · '+(p.pct===70?'70%':'Integral / tabela')+'</div>'+
-      '<div class="ls-grid"><div class="ls-full"><label for="lsMode">Modalidade</label><select id="lsMode"><option value="draw">Sorteio (sem lance)</option><option value="free">Lance livre</option>'+fixed.map(n=>'<option value="'+n+'">Lance fixo — '+n+' cotas (estimativa)</option>').join('')+'</select></div>'+
+      '<div class="ls-grid ls-controls"><div class="ls-full"><label for="lsMode">Modalidade</label><select id="lsMode"><option value="draw">Sorteio (sem lance)</option><option value="free">Lance livre</option>'+fixed.map(n=>'<option value="'+n+'">Lance fixo — '+n+' cotas (estimativa)</option>').join('')+'</select></div>'+
       '<div id="lsUnitBox"><label for="lsUnit">Informar lance em</label><select id="lsUnit"><option value="money">Reais (R$)</option><option value="percent">% da carta</option><option value="cot">Cotas de referência</option></select></div><div id="lsAmountBox"><label for="lsAmount">Valor do lance</label><input id="lsAmount" type="number" min="0" step="0.01" value="10000"></div>'+
       '<div class="ls-full" id="lsRangeBox"><label for="lsRange" class="ls-mobile-range-label">Ajuste rápido em % da carta</label><input id="lsRange" type="range" min="0" max="100" step="1" value="20"><div class="ls-desktop-quick" role="group" aria-label="Escolher percentual do lance"><button type="button" data-ls-quick="10" aria-pressed="false">10%</button><button type="button" data-ls-quick="15" aria-pressed="false">15%</button><button type="button" data-ls-quick="20" aria-pressed="false">20%</button><button type="button" data-ls-quick="25" aria-pressed="false">25%</button><button type="button" data-ls-quick="30" aria-pressed="false">30%</button><button type="button" data-ls-quick="40" aria-pressed="false">40%</button><button type="button" data-ls-quick="50" aria-pressed="false">50%</button></div></div>'+
       '<div class="ls-full" id="lsSourceBox"><label for="lsSource">Origem dos recursos</label><select id="lsSource"><option value="own">Recursos próprios</option>'+(g.embedded?'<option value="embedded">Embutido</option><option value="mixed">Misto: próprio + embutido</option>':'')+(g.fgts?'<option value="fgts">FGTS + próprios</option>':'')+(g.fgts&&g.embedded?'<option value="all">Próprio + embutido + FGTS</option>':'')+'</select></div>'+
@@ -96,7 +113,9 @@
     function scenarioText(){if(!current)return '';const x=current;const modality=el('lsMode').selectedOptions[0].textContent;return ['Simulação comercial estimada — Grupo '+g.group+' / '+p.code,'Crédito: '+brl(p.credit),'Parcela de tabela: '+brl(p.payment)+' / '+p.term+' meses','Modalidade: '+modality,'Lance: '+brl(x.bid),'Recursos próprios: '+brl(x.own),'Embutido: '+brl(x.embedded),'FGTS: '+brl(x.fgts),'Crédito líquido: '+brl(x.credit),'Saldo estimado: '+brl(x.net),'Redução da parcela: '+brl(x.lower),'Redução do prazo: '+(x.shorter>x.months?'não aplicável neste prazo':x.shorter+' meses'),'Sujeito à confirmação da administradora; sem garantia de contemplação.'].join('\n');}
     el('lsUse').onclick=()=>{if(!current)return;window.lanceScenario={key:[p.group,p.code,p.term,p.pct].join('|'),summary:scenarioText()};dialog.close();if(typeof window.refreshLanceChoice==='function')window.refreshLanceChoice();};
     el('lsCopy').onclick=async()=>{const msg=scenarioText();if(!msg)return;try{await navigator.clipboard.writeText(msg);el('lsStatus').textContent='Cenário copiado.'}catch(e){el('lsStatus').textContent='Não foi possível copiar automaticamente.'}};
-    dialog.addEventListener('close',()=>dialog.remove());
-    update();dialog.showModal();
+    const desktop=document.documentElement.classList.contains('desktop-ui');let fitObserver=null,fitFrame=0;
+    function fitDialog(){if(!desktop||!dialog.open)return;cancelAnimationFrame(fitFrame);fitFrame=requestAnimationFrame(()=>{const cs=getComputedStyle(dialog),pad=parseFloat(cs.paddingTop)+parseFloat(cs.paddingBottom);const max=(window.visualViewport?.height||window.innerHeight)*.92;const needed=panel.offsetHeight;const available=Math.max(1,max-pad);const scale=Math.min(1,available/Math.max(1,needed));panel.style.transform=scale<1?'scale('+scale.toFixed(5)+')':'none';dialog.style.height=Math.min(max,needed*scale+pad)+'px';dialog.scrollTop=0;});}
+    dialog.addEventListener('close',()=>{if(fitObserver)fitObserver.disconnect();cancelAnimationFrame(fitFrame);window.removeEventListener('resize',fitDialog);dialog.remove();});
+    update();dialog.showModal();if(desktop){if(typeof ResizeObserver==='function'){fitObserver=new ResizeObserver(fitDialog);fitObserver.observe(panel);}window.addEventListener('resize',fitDialog);fitDialog();}
   };
 })();
