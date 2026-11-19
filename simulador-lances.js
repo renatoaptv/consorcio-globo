@@ -95,6 +95,23 @@ html.desktop-ui #lanceDialog .ls-row{padding:5px 0}
     html:not(.desktop-ui) #lanceDialog #lsCopy,html:not(.desktop-ui) #lanceDialog #lsReset{background:#edf4fd;color:#1255a4;border:1px solid #c8d9ee}
     @media(max-width:360px){html:not(.desktop-ui) #lanceDialog{padding:10px}html:not(.desktop-ui) #lanceDialog .ls-result{padding:7px}}
 
+    /* Mobile: valores monetários inteiros, sem quebrar dígitos ou centavos. */
+    html:not(.desktop-ui) #lanceDialog .ls-hero b,
+    html:not(.desktop-ui) #lanceDialog .ls-number{white-space:nowrap;overflow-wrap:normal;word-break:normal;font-variant-numeric:tabular-nums}
+    html:not(.desktop-ui) #lanceDialog #lsOutput .ls-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr))}
+    html:not(.desktop-ui) #lanceDialog .ls-result strong.ls-number{font-size:clamp(16px,4.6vw,20px)}
+    html:not(.desktop-ui) #lanceDialog .ls-row b.ls-number{max-width:none;flex:0 0 auto}
+    html:not(.desktop-ui) #lanceDialog .ls-row span{flex:1;overflow-wrap:break-word}
+    @media(max-width:480px){
+      html:not(.desktop-ui) #lanceDialog{padding:11px}
+      html:not(.desktop-ui) #lanceDialog #lsOutput .ls-grid{grid-template-columns:minmax(0,1fr);gap:5px}
+      html:not(.desktop-ui) #lanceDialog #lsOutput .ls-result{display:grid;grid-template-columns:minmax(0,1fr) max-content;align-items:center;gap:7px;padding:8px 9px}
+      html:not(.desktop-ui) #lanceDialog #lsOutput .ls-result strong{margin:0;text-align:right;font-size:clamp(15px,4.6vw,19px)}
+      html:not(.desktop-ui) #lanceDialog #lsOutput .ls-result strong:not(.ls-number){max-width:130px;white-space:normal;overflow-wrap:break-word}
+      html:not(.desktop-ui) #lanceDialog #lsOutput .ls-result .ls-label{min-width:0;overflow-wrap:break-word}
+      html:not(.desktop-ui) #lanceDialog .ls-hero b{font-size:clamp(23px,6.4vw,27px)}
+    }
+
     `;
     dialog.append(style);
     const panel=document.createElement('div');panel.className='ls-main';
@@ -123,8 +140,9 @@ html.desktop-ui #lanceDialog .ls-row{padding:5px 0}
       const x=prelim.error?prelim:estimate(p,g,mode,unit,amount,embedded,fgts);
       current=x.error?null:x;el('lsError').hidden=!x.error;el('lsError').textContent=x.error||'';el('lsCopy').disabled=!!x.error;el('lsUse').disabled=!!x.error;
       if(x.error){el('lsOutput').innerHTML='';return;}
-      const row=(a,b)=>'<div class="ls-row"><span>'+a+'</span><b>'+b+'</b></div>';
-      const tile=(a,b)=>'<div class="ls-result"><span class="ls-label">'+a+'</span><strong>'+b+'</strong></div>';
+      const numericClass=b=>/^(?:R\$|\d)/.test(String(b))?' class="ls-number"':'';
+      const row=(a,b)=>'<div class="ls-row"><span>'+a+'</span><b'+numericClass(b)+'>'+b+'</b></div>';
+      const tile=(a,b)=>'<div class="ls-result"><span class="ls-label">'+a+'</span><strong'+numericClass(b)+'>'+b+'</strong></div>';
       el('lsOutput').innerHTML='<div class="ls-grid">'+tile('Lance total',brl(x.bid))+tile('Crédito líquido estimado',brl(x.credit))+tile('Recursos próprios',brl(x.own))+tile('Saldo remanescente estimado',brl(x.net))+'</div>'+
         row('Lance sobre a carta',pct(x.bid/p.credit*100))+row('Parcela inicial de referência do grupo',brl(x.reference))+row('Cotas equivalentes', (x.bid/x.reference).toLocaleString('pt-BR',{maximumFractionDigits:2}))+row('Lance embutido',brl(x.embedded))+row('FGTS',brl(x.fgts))+row('Saldo antes do lance (sem seguro futuro)',brl(x.balance))+row('Primeira parcela oficial',brl(p.payment))+row('Desembolso inicial: parcela + recursos próprios',brl(p.payment+x.own))+
         '<h3 style="margin-top:15px">Compare as duas estratégias</h3><div class="ls-grid">'+tile('Manter prazo / reduzir parcela', (x.net>0?x.months:0)+' × '+brl(x.lower))+tile('Reduzir prazo / manter parcela integral',(x.shorter>x.months?'Não aplicável neste prazo':x.shorter+' meses'))+'</div>'+(x.shorter>x.months?'':row('Parcela integral estimada na redução de prazo',brl(x.regular))+row('Última parcela estimada',brl(Math.max(0,x.last))))+'<p class="ls-note">Saldo sem seguro futuro. Na modalidade reduzida, a diferença não amortizada permanece no saldo. Se o prazo calculado ultrapassar o prazo contratado, a administradora deverá ajustar as parcelas; não há extensão automática.</p>';
