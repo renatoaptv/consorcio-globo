@@ -37,6 +37,20 @@
     #lanceDialog .ls-row{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px}#lanceDialog .ls-row b{text-align:right}
     #lanceDialog .ls-note{font-size:12px;line-height:1.5;color:#536580}#lanceDialog .ls-error{background:#fff0ef;padding:10px;border-radius:8px;color:#9d271c}#lanceDialog [hidden]{display:none!important}
     #lanceDialog .ls-buttons{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}#lanceDialog .ls-buttons button{padding:10px 14px;border:0;border-radius:8px;font-weight:700;color:white;background:#1760ad;cursor:pointer}
+    #lanceDialog .ls-desktop-quick{display:none}
+    @media (any-hover:hover) and (any-pointer:fine){
+      #lanceDialog{width:min(920px,96vw);scrollbar-width:none}
+      #lanceDialog::-webkit-scrollbar{display:none}
+      #lanceDialog #lsRange{display:none}
+      #lanceDialog .ls-mobile-range-label{display:none}
+      #lanceDialog .ls-desktop-quick{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+      #lanceDialog .ls-desktop-quick button{background:#eaf2fd;color:#1255a4;border:1px solid #c8d9ee;border-radius:8px;min-height:34px;padding:5px 12px;font-weight:750;flex:1}
+      #lanceDialog .ls-desktop-quick button:hover{background:#d6e7fc}
+      #lanceDialog .ls-desktop-quick button[aria-pressed="true"]{background:#1255a4;color:white}
+      #lanceDialog .ls-hero{padding:12px;margin:8px 0}
+      #lanceDialog .ls-grid{gap:8px;margin:8px 0}
+      #lanceDialog .ls-row{padding:5px 0}
+    }
     @media(max-width:460px){#lanceDialog{padding:13px}#lanceDialog .ls-grid{gap:8px}#lanceDialog .ls-result strong{font-size:18px}}
     `;
     dialog.append(style);
@@ -45,7 +59,7 @@
       '<div class="ls-hero">Grupo '+g.group+' · '+p.code+'<b>'+brl(p.credit)+'</b>'+p.term+' meses · '+brl(p.payment)+' de parcela oficial · '+(p.pct===70?'70%':'Integral / tabela')+'</div>'+
       '<div class="ls-grid"><div class="ls-full"><label for="lsMode">Modalidade</label><select id="lsMode"><option value="draw">Sorteio (sem lance)</option><option value="free">Lance livre</option>'+fixed.map(n=>'<option value="'+n+'">Lance fixo — '+n+' cotas (estimativa)</option>').join('')+'</select></div>'+
       '<div id="lsUnitBox"><label for="lsUnit">Informar lance em</label><select id="lsUnit"><option value="money">Reais (R$)</option><option value="percent">% da carta</option><option value="cot">Cotas de referência</option></select></div><div id="lsAmountBox"><label for="lsAmount">Valor do lance</label><input id="lsAmount" type="number" min="0" step="0.01" value="10000"></div>'+
-      '<div class="ls-full" id="lsRangeBox"><label for="lsRange">Ajuste rápido em % da carta</label><input id="lsRange" type="range" min="0" max="100" step="1" value="20"></div>'+
+      '<div class="ls-full" id="lsRangeBox"><label for="lsRange" class="ls-mobile-range-label">Ajuste rápido em % da carta</label><input id="lsRange" type="range" min="0" max="100" step="1" value="20"><div class="ls-desktop-quick" role="group" aria-label="Escolher percentual do lance"><button type="button" data-ls-quick="10" aria-pressed="false">10%</button><button type="button" data-ls-quick="15" aria-pressed="false">15%</button><button type="button" data-ls-quick="20" aria-pressed="false">20%</button><button type="button" data-ls-quick="25" aria-pressed="false">25%</button><button type="button" data-ls-quick="30" aria-pressed="false">30%</button><button type="button" data-ls-quick="40" aria-pressed="false">40%</button><button type="button" data-ls-quick="50" aria-pressed="false">50%</button></div></div>'+
       '<div class="ls-full" id="lsSourceBox"><label for="lsSource">Origem dos recursos</label><select id="lsSource"><option value="own">Recursos próprios</option>'+(g.embedded?'<option value="embedded">Embutido</option><option value="mixed">Misto: próprio + embutido</option>':'')+(g.fgts?'<option value="fgts">FGTS + próprios</option>':'')+(g.fgts&&g.embedded?'<option value="all">Próprio + embutido + FGTS</option>':'')+'</select></div>'+
       '<div id="lsEmbBox"><label for="lsEmb">Embutido (R$ · até 30% do crédito)</label><input id="lsEmb" type="number" min="0" step="0.01" value="0"></div><div id="lsFgtsBox"><label for="lsFgts">FGTS (R$ · sujeito à elegibilidade)</label><input id="lsFgts" type="number" min="0" step="0.01" value="0"></div></div>'+
       '<div id="lsError" class="ls-error" role="alert" hidden></div><div id="lsOutput" aria-live="polite"></div><p class="ls-note">Projeção hipotética de contemplação na primeira assembleia, com a primeira parcela paga. Valores sem reajustes. O lance fixo utiliza a parcela inicial integral do grupo como referência, sem seguro, independentemente do prazo contratado. Seguro estimado constante. Parcelas anteriores à adesão, diferenças contratuais e liberação do crédito dependem da apuração oficial. Não há garantia de contemplação. '+(g.group==='4210'?'Lance embutido não habilitado: a tabela de motos não informa limite. ':'')+(g.group==='0126'||g.group==='8221'?'Taxa total inferida da tabela, pendente de confirmação. ':'')+(g.group==='4210'||g.group==='0128'?'O adendo apresenta referência específica para o lance mínimo. ':'')+'</p><div class="ls-buttons"><button type="button" id="lsUse">Usar cenário na proposta</button><button type="button" id="lsCopy">Copiar cenário</button><button type="button" id="lsReset">Reiniciar</button></div><p id="lsStatus" role="status" class="ls-note"></p>';
@@ -58,6 +72,7 @@
       el('lsEmbBox').hidden=draw||!['mixed','all'].includes(source);
       el('lsFgtsBox').hidden=draw||!['fgts','all'].includes(source);
       let amount=Number(el('lsAmount').value);
+      panel.querySelectorAll('[data-ls-quick]').forEach(b=>b.setAttribute('aria-pressed',String(free&&unit==='percent'&&Number(b.dataset.lsQuick)===amount)));
       let prelim=estimate(p,g,mode,unit,amount,0,0);
       let embedded=draw?0:source==='embedded'&&!prelim.error?prelim.bid:['mixed','all'].includes(source)?Number(el('lsEmb').value):0;
       let fgts=draw?0:['fgts','all'].includes(source)?Number(el('lsFgts').value):0;
@@ -75,6 +90,7 @@
     el('lsAmount').value=String(Math.round(p.credit*.2));
     for(const id of ['lsMode','lsUnit','lsAmount','lsSource','lsEmb','lsFgts'])el(id).addEventListener('input',update);
     el('lsRange').addEventListener('input',()=>{el('lsUnit').value='percent';el('lsAmount').value=el('lsRange').value;update()});
+    panel.querySelectorAll('[data-ls-quick]').forEach(b=>b.onclick=()=>{el('lsUnit').value='percent';el('lsAmount').value=b.dataset.lsQuick;el('lsRange').value=b.dataset.lsQuick;update()});
     el('lsClose').onclick=()=>dialog.close();
     el('lsReset').onclick=()=>{el('lsMode').value=String(fixed[0]);el('lsUnit').value='money';el('lsAmount').value=String(Math.round(p.credit*.2));el('lsSource').value='own';el('lsEmb').value=0;el('lsFgts').value=0;el('lsRange').value=20;el('lsStatus').textContent='';update()};
     function scenarioText(){if(!current)return '';const x=current;const modality=el('lsMode').selectedOptions[0].textContent;return ['Simulação comercial estimada — Grupo '+g.group+' / '+p.code,'Crédito: '+brl(p.credit),'Parcela de tabela: '+brl(p.payment)+' / '+p.term+' meses','Modalidade: '+modality,'Lance: '+brl(x.bid),'Recursos próprios: '+brl(x.own),'Embutido: '+brl(x.embedded),'FGTS: '+brl(x.fgts),'Crédito líquido: '+brl(x.credit),'Saldo estimado: '+brl(x.net),'Redução da parcela: '+brl(x.lower),'Redução do prazo: '+(x.shorter>x.months?'não aplicável neste prazo':x.shorter+' meses'),'Sujeito à confirmação da administradora; sem garantia de contemplação.'].join('\n');}
